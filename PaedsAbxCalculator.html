@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PaedsAbxCalculator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding-top: 30px;
+    }
+    .container {
+      max-width: 800px;
+    }
+    .antibiotic-img {
+      width: 120px;
+      margin-bottom: 20px;
+    }
+    .result-box {
+      white-space: pre-wrap;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container text-center">
+    <img src="https://media.istockphoto.com/id/871920402/vector/concept-of-resistance-to-antibiotics-creature-superbug-a-microorganism-stepping-on-medicines.jpg?s=612x612&w=0&k=20&c=xhNrap5Iw-aOCleECFjxc5rp4r9Rcbkyd-IZrAYM28o=" class="antibiotic-img" alt="Antibiotic" />
+    <h1>Paediatric Antibiotic Calculator</h1>
+    <p class="text-muted mb-4">Outpatient / Oral Regimens</p>
+
+    <div class="mb-3">
+      <label class="form-label">Diagnosis</label>
+      <select id="diagnosis" class="form-select">
+        <option value="">Select diagnosis...</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Age Unit</label>
+      <select id="ageUnit" class="form-select">
+        <option value="years">Years</option>
+        <option value="months">Months</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Age</label>
+      <input type="number" class="form-control" id="age" placeholder="Enter age" min="0">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Weight (kg)</label>
+      <input type="number" class="form-control" id="weight" placeholder="Enter weight" min="0">
+    </div>
+
+    <button class="btn btn-primary" onclick="calculate()">Calculate</button>
+
+    <div id="results" class="mt-4 result-box text-start"></div>
+  </div>
+
+  <script>
+    const diagnoses = {
+      "Pharyngitis / Tonsillitis": [
+        {
+          type: "Preferred",
+          drug: "Phenoxymethylpenicillin",
+          doseLow: 25,
+          doseHigh: 50,
+          freq: "QID",
+          max: 2000,
+          duration: 10,
+          note: "For mild pharyngitis"
+        },
+        {
+          type: "Alternative",
+          drug: "Amoxicillin",
+          doseLow: 50,
+          doseHigh: 50,
+          freq: "OD or BD",
+          max: 1000,
+          duration: 10,
+          note: "Alternative for mild pharyngitis"
+        }
+      ],
+      "Rhinosinusitis": [
+        {
+          type: "Preferred",
+          drug: "Amoxicillin",
+          doseLow: 80,
+          doseHigh: 90,
+          freq: "BD",
+          max: 2000,
+          duration: 5,
+          note: "High dose for bacterial sinusitis"
+        }
+      ],
+      "Acute Otitis Media": [
+        {
+          type: "Preferred",
+          drug: "Amoxicillin",
+          doseLow: 80,
+          doseHigh: 90,
+          freq: "BD",
+          max: 3000,
+          duration: 5,
+          note: "Preferred unless allergy or failure"
+        }
+      ],
+      "Otitis Externa": [
+        {
+          type: "Preferred",
+          drug: "Ofloxacin otic drops",
+          doseLow: null,
+          doseHigh: null,
+          freq: "5 drops daily",
+          max: null,
+          duration: 7,
+          note: "Topical therapy only"
+        }
+      ],
+      "Community-acquired Pneumonia": [
+        {
+          type: "Preferred",
+          drug: "Amoxicillin",
+          doseLow: 80,
+          doseHigh: 90,
+          freq: "BD",
+          max: 4000,
+          duration: 5,
+          note: "Outpatient mild CAP"
+        }
+      ],
+      "Dysentery": [
+        {
+          type: "Preferred",
+          drug: "Ceftriaxone",
+          doseLow: 75,
+          doseHigh: 100,
+          freq: "OD",
+          max: 2000,
+          duration: 5,
+          note: "For severe illness"
+        }
+      ],
+      "Typhoid Fever": [
+        {
+          type: "Preferred",
+          drug: "Azithromycin",
+          doseLow: 20,
+          doseHigh: 20,
+          freq: "OD",
+          max: 1000,
+          duration: 5,
+          note: "Mild or uncomplicated"
+        }
+      ],
+      "Amoebiasis": [
+        {
+          type: "Preferred",
+          drug: "Metronidazole",
+          doseLow: 30,
+          doseHigh: 50,
+          freq: "TDS",
+          max: 750,
+          duration: 7,
+          note: "Similar for extraintestinal"
+        }
+      ],
+      "Giardiasis": [
+        {
+          type: "Preferred",
+          drug: "Metronidazole",
+          doseLow: 15,
+          doseHigh: 15,
+          freq: "TDS",
+          max: 250,
+          duration: 5,
+          note: "Oral regimen"
+        }
+      ],
+      "Cholera": [
+        {
+          type: "Preferred",
+          drug: "Azithromycin",
+          doseLow: 20,
+          doseHigh: 20,
+          freq: "Single dose",
+          max: 1000,
+          duration: 1,
+          note: "Or Erythromycin alternative"
+        }
+      ],
+      "Cellulitis": [
+        {
+          type: "Preferred",
+          drug: "Cloxacillin",
+          doseLow: 50,
+          doseHigh: 100,
+          freq: "QID",
+          max: 1000,
+          duration: 7,
+          note: "Mild cellulitis outpatient"
+        }
+      ],
+      "Impetigo": [
+        {
+          type: "Preferred",
+          drug: "Cloxacillin",
+          doseLow: 50,
+          doseHigh: 100,
+          freq: "QID",
+          max: 1000,
+          duration: 7,
+          note: "Generalised impetigo oral treatment"
+        }
+      ],
+      "Scabies": [
+        {
+          type: "Preferred",
+          drug: "Permethrin 5%",
+          doseLow: null,
+          doseHigh: null,
+          freq: "Topical",
+          max: null,
+          duration: 2,
+          note: "Two applications one week apart"
+        }
+      ],
+      "Tinea Capitis": [
+        {
+          type: "Preferred",
+          drug: "Griseofulvin",
+          doseLow: 10,
+          doseHigh: 20,
+          freq: "OD",
+          max: 750,
+          duration: 42,
+          note: "At least 6 weeks treatment"
+        }
+      ],
+      "Animal Bites": [
+        {
+          type: "Preferred",
+          drug: "Amoxicillin/clavulanate",
+          doseLow: 80,
+          doseHigh: 90,
+          freq: "BD",
+          max: 2000,
+          duration: 5,
+          note: "For cat/dog bites"
+        }
+      ],
+      "Acute Pyelonephritis ≥ 3 months": [
+        {
+          type: "Preferred",
+          drug: "Cephalexin",
+          doseLow: 25,
+          doseHigh: 50,
+          freq: "BD",
+          max: 2000,
+          duration: 10,
+          note: "Oral step-down from IV"
+        }
+      ],
+      "Lower UTI": [
+        {
+          type: "Preferred",
+          drug: "Amoxicillin/clavulanate",
+          doseLow: 40,
+          doseHigh: 45,
+          freq: "BD",
+          max: 2000,
+          duration: 5,
+          note: "Oral treatment"
+        }
+      ],
+      "Scrub Typhus": [
+        {
+          type: "Preferred",
+          drug: "Doxycycline",
+          doseLow: 2,
+          doseHigh: 4,
+          freq: "OD or BD",
+          max: 200,
+          duration: 5,
+          note: "Can be used in young children for rickettsial diseases"
+        }
+      ],
+      "Leptospirosis": [
+        {
+          type: "Preferred",
+          drug: "Amoxicillin",
+          doseLow: 40,
+          doseHigh: 45,
+          freq: "TDS",
+          max: 500,
+          duration: 7,
+          note: "Mild disease"
+        }
+      ],
+      "Malaria": [
+        {
+          type: "Preferred",
+          drug: "Artemether/lumefantrine",
+          doseLow: null,
+          doseHigh: null,
+          freq: "Weight band dosing",
+          max: null,
+          duration: 3,
+          note: "Riamet regimen"
+        }
+      ],
+      "Preseptal Cellulitis": [
+        {
+          type: "Preferred",
+          drug: "Amoxicillin/clavulanate",
+          doseLow: 80,
+          doseHigh: 90,
+          freq: "BD",
+          max: 2000,
+          duration: 7,
+          note: "Mild cases treated outpatient"
+        }
+      ]
+    };
+
+    window.onload = () => {
+      const diagnosisSelect = document.getElementById("diagnosis");
+      for (let diag of Object.keys(diagnoses)) {
+        const option = document.createElement("option");
+        option.value = diag;
+        option.textContent = diag;
+        diagnosisSelect.appendChild(option);
+      }
+    };
+
+    function calculate() {
+      const diag = document.getElementById("diagnosis").value;
+      const ageUnit = document.getElementById("ageUnit").value;
+      const age = parseFloat(document.getElementById("age").value);
+      const weight = parseFloat(document.getElementById("weight").value);
+
+      if (!diag || isNaN(weight)) {
+        document.getElementById("results").textContent = "Please select a diagnosis and enter weight.";
+        return;
+      }
+
+      let results = `Diagnosis: ${diag}\n\n`;
+
+      for (let abx of diagnoses[diag]) {
+        if (abx.doseLow) {
+          let low = abx.doseLow * weight;
+          let high = abx.doseHigh * weight;
+          let doseStr =
+            abx.doseLow !== abx.doseHigh
+              ? `${low.toFixed(0)} - ${high.toFixed(0)} mg/day`
+              : `${low.toFixed(0)} mg/day`;
+
+          let maxStr = abx.max ? `(Max daily dose ${abx.max} mg)` : "";
+
+          results += `[${abx.type}] ${abx.drug}: ${doseStr} ${maxStr} divided into ${abx.freq} for ${abx.duration} days.\n`;
+        } else {
+          results += `[${abx.type}] ${abx.drug}: ${abx.freq} for ${abx.duration} days.\n`;
+        }
+
+        if (abx.note) {
+          results += `Note: ${abx.note}\n`;
+        }
+        results += `\n`;
+      }
+
+      document.getElementById("results").textContent = results.trim();
+    }
+  </script>
+</body>
+</html>
+
